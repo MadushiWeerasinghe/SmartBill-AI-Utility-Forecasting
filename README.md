@@ -124,7 +124,7 @@ SmartBill is an intelligent utility bill management system designed specifically
 | Component | Technology |
 |-----------|------------|
 | Framework | Django 5.0+ |
-| Database | MySQL / PostgreSQL / SQLite |
+| Database |  SQLite |
 | ORM | Django ORM |
 | ML Framework | scikit-learn 1.6+ |
 | Data Processing | pandas, numpy |
