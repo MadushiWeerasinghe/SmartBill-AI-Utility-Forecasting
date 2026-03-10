@@ -1,0 +1,258 @@
+{% extends 'bills/base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2 class="mb-4"><i class="fas fa-wallet"></i> Budget Forecast Generator</h2>
+
+    <div class="row">
+        <!-- Budget Form -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-calculator"></i> Generate Forecast</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="forecastForm">
+                        {% csrf_token %}
+                        
+                        <!-- ROW 1: Utility Type Selector -->
+                        <div class="mb-3">
+                            <label class="form-label"><strong>1️⃣ Select Utility Type</strong></label>
+                            <select name="utility_type" id="utilityType" class="form-select" required>
+                                <option value="">-- Choose Utility Type --</option>
+                                <option value="electricity">⚡ Electricity</option>
+                                <option value="water">💧 Water</option>
+                                <option value="mobile">📱 Mobile</option>
+                                <option value="ALL">✅ ALL UTILITIES</option>
+                            </select>
+                        </div>
+
+                        <!-- ROW 2: Account Number Selector (Dynamic) -->
+                        <div class="mb-3">
+                            <label class="form-label"><strong>2️⃣ Select Account Number</strong></label>
+                            <select name="account_id" id="accountNumber" class="form-select" required disabled>
+                                <option value="">-- First select utility type --</option>
+                            </select>
+                        </div>
+
+                        <!-- ROW 3: Forecast Period -->
+                        <div class="mb-3">
+                            <label class="form-label"><strong>3️⃣ Forecast Period</strong></label>
+                            <select name="forecast_months" class="form-select" required>
+                                <option value="3">📊 3 Months</option>
+                                <option value="6" selected>📊 6 Months</option>
+                                <option value="custom">⚙️ Custom Range</option>
+                            </select>
+                        </div>
+
+                        <!-- ROW 4: Starting Month -->
+                        <div class="mb-3">
+                            <label class="form-label"><strong>4️⃣ Starting Month</strong></label>
+                            <select name="start_month" class="form-select" required>
+                                <option value="1" {% if current_month == 1 %}selected{% endif %}>January</option>
+                                <option value="2" {% if current_month == 2 %}selected{% endif %}>February</option>
+                                <option value="3" {% if current_month == 3 %}selected{% endif %}>March</option>
+                                <option value="4" {% if current_month == 4 %}selected{% endif %}>April</option>
+                                <option value="5" {% if current_month == 5 %}selected{% endif %}>May</option>
+                                <option value="6" {% if current_month == 6 %}selected{% endif %}>June</option>
+                                <option value="7" {% if current_month == 7 %}selected{% endif %}>July</option>
+                                <option value="8" {% if current_month == 8 %}selected{% endif %}>August</option>
+                                <option value="9" {% if current_month == 9 %}selected{% endif %}>September</option>
+                                <option value="10" {% if current_month == 10 %}selected{% endif %}>October</option>
+                                <option value="11" {% if current_month == 11 %}selected{% endif %}>November</option>
+                                <option value="12" {% if current_month == 12 %}selected{% endif %}>December</option>
+                            </select>
+                        </div>
+
+                        <!-- ROW 5: Year -->
+                        <div class="mb-3">
+                            <label class="form-label"><strong>5️⃣ Year</strong></label>
+                            <select name="year" class="form-select" required>
+                                {% for y in years %}
+                                <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-chart-line"></i> Generate Forecast
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {% if forecast %}
+            <!-- Summary Card -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="fas fa-chart-bar"></i> Summary</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Utility:</strong> {{ forecast.utility_name }}</p>
+                    <p class="mb-1"><strong>Account:</strong> {{ forecast.account_name }}</p>
+                    <p class="mb-1"><strong>Period:</strong> {{ forecast.period_text }}</p>
+                    <hr>
+                    <p class="mb-1"><strong>Total Budget:</strong><br>
+                        <span class="text-success fs-4">LKR {{ forecast.total_budget|floatformat:2 }}</span>
+                    </p>
+                    <p class="mb-0"><strong>Monthly Avg:</strong> LKR {{ forecast.monthly_average|floatformat:2 }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Forecast Results -->
+        <div class="col-md-8">
+            {% if forecast %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar"></i> 
+                        {{ forecast.period_text }} Forecast
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for account_data in forecast.accounts %}
+                    <div class="card mb-4 border-primary">
+                        <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">
+                                    {% if account_data.utility_type == 'electricity' %}
+                                        <i class="fas fa-bolt"></i> Electricity
+                                    {% elif account_data.utility_type == 'water' %}
+                                        <i class="fas fa-tint"></i> Water
+                                    {% else %}
+                                        <i class="fas fa-mobile-alt"></i> Mobile
+                                    {% endif %}
+                                    - {{ account_data.account_name }}
+                                    <small>({{ account_data.account_number }})</small>
+                                </h6>
+                                <span class="badge bg-light text-dark fs-6">
+                                    Total: LKR {{ account_data.total_budget|floatformat:2 }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Month</th>
+                                            <th>Units</th>
+                                            <th>Amount</th>
+                                            <th>Buffer (10%)</th>
+                                            <th>Budget</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for month in account_data.months %}
+                                        <tr>
+                                            <td><strong>{{ month.name }} {{ month.year }}</strong></td>
+                                            <td>{{ month.units|floatformat:0 }} {{ account_data.unit_label }}</td>
+                                            <td>LKR {{ month.amount|floatformat:2 }}</td>
+                                            <td class="text-success">+{{ month.buffer|floatformat:2 }}</td>
+                                            <td><strong class="text-primary">LKR {{ month.budget|floatformat:2 }}</strong></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot class="table-info">
+                                        <tr>
+                                            <th>TOTAL</th>
+                                            <th>{{ account_data.total_units|floatformat:0 }} {{ account_data.unit_label }}</th>
+                                            <th>LKR {{ account_data.total_amount|floatformat:2 }}</th>
+                                            <th class="text-success">+{{ account_data.total_buffer|floatformat:2 }}</th>
+                                            <th><strong class="text-primary">LKR {{ account_data.total_budget|floatformat:2 }}</strong></th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <!-- No Forecast Yet -->
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-wallet fa-5x text-muted mb-3"></i>
+                    <h4>No forecast generated yet</h4>
+                    <p class="text-muted">Follow the 5 steps on the left to generate your forecast</p>
+                    <div class="text-start mt-4" style="max-width: 500px; margin: 0 auto;">
+                        <p><strong>Steps:</strong></p>
+                        <ol class="text-muted">
+                            <li>Select utility type (Electricity/Water/Mobile/All)</li>
+                            <li>Choose specific account number</li>
+                            <li>Choose forecast period (3 or 6 months)</li>
+                            <li>Select starting month</li>
+                            <li>Select year and click Generate!</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Dynamic account number population based on utility type
+document.getElementById('utilityType').addEventListener('change', function() {
+    const accountSelect = document.getElementById('accountNumber');
+    const utilityType = this.value;
+    
+    // Clear current options
+    accountSelect.innerHTML = '<option value="">-- Loading accounts --</option>';
+    accountSelect.disabled = true;
+    
+    if (utilityType === 'ALL') {
+        accountSelect.innerHTML = '<option value="ALL" selected>✅ All Accounts (Combined)</option>';
+        accountSelect.disabled = false;
+        return;
+    }
+    
+    if (!utilityType) {
+        accountSelect.innerHTML = '<option value="">-- First select utility type --</option>';
+        return;
+    }
+    
+    // Get accounts data from Django context
+    const allAccounts = {{ all_accounts_json|safe }};
+    const filteredAccounts = allAccounts.filter(acc => acc.utility_type === utilityType);
+    
+    if (filteredAccounts.length === 0) {
+        accountSelect.innerHTML = '<option value="">-- No accounts found --</option>';
+        return;
+    }
+    
+    // Populate accounts
+    let options = '<option value="">-- Choose Account --</option>';
+    filteredAccounts.forEach(acc => {
+        options += `<option value="${acc.id}">${acc.account_name} (${acc.account_number})</option>`;
+    });
+    options += `<option value="ALL_${utilityType}">✅ All ${utilityType.toUpperCase()} Accounts</option>`;
+    
+    accountSelect.innerHTML = options;
+    accountSelect.disabled = false;
+});
+</script>
+
+<style>
+.form-label strong {
+    color: #495057;
+    font-size: 0.95rem;
+}
+
+.card {
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f0f8ff;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends 'bills/base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-{% if account.utility_type == 'electricity' %}bolt{% elif account.utility_type == 'water' %}tint{% else %}mobile-alt{% endif %}"></i>
+            {{ account.account_name }}
+        </h2>
+        <a href="{% url 'manage_accounts' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Accounts
+        </a>
+    </div>
+
+    <!-- Account Info -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <h6 class="text-muted">Account Number</h6>
+                    <h4>{{ account.account_number }}</h4>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="text-muted">Total Bills</h6>
+                    <h4>{{ total_bills }}</h4>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="text-muted">Total Amount</h6>
+                    <h4>LKR {{ total_amount|floatformat:2 }}</h4>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="text-muted">Unpaid Bills</h6>
+                    <h4 class="text-danger">{{ unpaid_bills }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="mb-4">
+        <a href="{% url 'bulk_import_bills' account.id %}" class="btn btn-primary btn-lg">
+            <i class="fas fa-file-import"></i> Import Bill History (12 Months)
+        </a>
+        <a href="{% url 'add_bill' %}" class="btn btn-success btn-lg">
+            <i class="fas fa-plus"></i> Add Single Bill
+        </a>
+    </div>
+
+    <!-- Bill History -->
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="fas fa-history"></i> Bill History</h5>
+        </div>
+        <div class="card-body">
+            {% if bills %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Month/Year</th>
+                            <th>Units</th>
+                            <th>Amount</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Risk</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in bills %}
+                        <tr>
+                            <td>{{ bill.billing_month }}/{{ bill.billing_year }}</td>
+                            <td>{{ bill.units_consumed|floatformat:1 }}</td>
+                            <td><strong>LKR {{ bill.bill_amount|floatformat:2 }}</strong></td>
+                            <td>{{ bill.due_date }}</td>
+                            <td>
+                                {% if bill.is_paid %}
+                                    <span class="badge bg-success">Paid</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Unpaid</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if bill.late_payment_risk == 'High Risk' %}
+                                    <span class="badge bg-danger">High Risk</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Low Risk</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No bills yet for this account.
+                <a href="{% url 'bulk_import_bills' account.id %}" class="alert-link">Import bill history</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,209 @@
+{% extends 'bills/base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2 class="mb-4"><i class="fas fa-wallet"></i> 6-Month Budget Forecast (Account-Wise)</h2>
+
+    <div class="row">
+        <!-- Budget Form -->
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-calculator"></i> Generate 6-Month Forecast</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <!-- Account Selection -->
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Select Account</strong></label>
+                            <select name="account_id" class="form-select" required>
+                                <option value="">-- Choose Account --</option>
+                                <optgroup label="Electricity">
+                                    {% for acc in all_accounts %}
+                                        {% if acc.utility_type == 'electricity' %}
+                                        <option value="{{ acc.id }}">
+                                            {{ acc.account_name }} ({{ acc.account_number }})
+                                        </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </optgroup>
+                                <optgroup label="Water">
+                                    {% for acc in all_accounts %}
+                                        {% if acc.utility_type == 'water' %}
+                                        <option value="{{ acc.id }}">
+                                            {{ acc.account_name }} ({{ acc.account_number }})
+                                        </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </optgroup>
+                                <optgroup label="Mobile">
+                                    {% for acc in all_accounts %}
+                                        {% if acc.utility_type == 'mobile' %}
+                                        <option value="{{ acc.id }}">
+                                            {{ acc.account_name }} ({{ acc.account_number }})
+                                        </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </optgroup>
+                                <option value="ALL">✅ ALL ACCOUNTS (Combined)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Starting Month</label>
+                            <select name="start_month" class="form-select" required>
+                                <option value="1" {% if current_month == 1 %}selected{% endif %}>January</option>
+                                <option value="2" {% if current_month == 2 %}selected{% endif %}>February</option>
+                                <option value="3" {% if current_month == 3 %}selected{% endif %}>March</option>
+                                <option value="4" {% if current_month == 4 %}selected{% endif %}>April</option>
+                                <option value="5" {% if current_month == 5 %}selected{% endif %}>May</option>
+                                <option value="6" {% if current_month == 6 %}selected{% endif %}>June</option>
+                                <option value="7" {% if current_month == 7 %}selected{% endif %}>July</option>
+                                <option value="8" {% if current_month == 8 %}selected{% endif %}>August</option>
+                                <option value="9" {% if current_month == 9 %}selected{% endif %}>September</option>
+                                <option value="10" {% if current_month == 10 %}selected{% endif %}>October</option>
+                                <option value="11" {% if current_month == 11 %}selected{% endif %}>November</option>
+                                <option value="12" {% if current_month == 12 %}selected{% endif %}>December</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Year</label>
+                            <select name="year" class="form-select" required>
+                                {% for y in years %}
+                                <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-chart-line"></i> Generate 6-Month Forecast
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {% if forecast %}
+            <!-- Summary Card -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="fas fa-chart-bar"></i> 6-Month Summary</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Account:</strong><br>{{ forecast.selected_account }}</p>
+                    <p class="mb-1"><strong>Period:</strong><br>{{ forecast.start_month_name }} - {{ forecast.end_month_name }} {{ forecast.year }}</p>
+                    <hr>
+                    <p class="mb-1"><strong>Total Budget:</strong><br><span class="text-success fs-5">LKR {{ forecast.total_budget|floatformat:2 }}</span></p>
+                    <p class="mb-1"><strong>Monthly Avg:</strong><br>LKR {{ forecast.monthly_average|floatformat:2 }}</p>
+                    <p class="mb-0"><strong>Accounts:</strong> {{ forecast.accounts|length }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Forecast Results -->
+        <div class="col-md-9">
+            {% if forecast %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar"></i> 
+                        6-Month Forecast: {{ forecast.start_month_name }} {{ forecast.year }} onwards
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Account-Wise Forecasts -->
+                    {% for account_data in forecast.accounts %}
+                    <div class="card mb-4 border-primary">
+                        <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">
+                                    {% if account_data.utility_type == 'electricity' %}
+                                        <i class="fas fa-bolt"></i> Electricity
+                                    {% elif account_data.utility_type == 'water' %}
+                                        <i class="fas fa-tint"></i> Water
+                                    {% else %}
+                                        <i class="fas fa-mobile-alt"></i> Mobile
+                                    {% endif %}
+                                    - {{ account_data.account_name }}
+                                    <small>({{ account_data.account_number }})</small>
+                                </h6>
+                                <span class="badge bg-light text-dark fs-6">
+                                    6-Month Total: LKR {{ account_data.six_month_total|floatformat:2 }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Month</th>
+                                            <th>Units</th>
+                                            <th>Amount</th>
+                                            <th>Buffer (10%)</th>
+                                            <th>Budget</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for month in account_data.months %}
+                                        <tr>
+                                            <td><strong>{{ month.name }} {{ month.year }}</strong></td>
+                                            <td>{{ month.units|floatformat:0 }} {{ account_data.unit_label }}</td>
+                                            <td>LKR {{ month.amount|floatformat:2 }}</td>
+                                            <td class="text-success">+LKR {{ month.buffer|floatformat:2 }}</td>
+                                            <td><strong class="text-primary">LKR {{ month.budget|floatformat:2 }}</strong></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot class="table-info">
+                                        <tr>
+                                            <th>TOTAL (6 Months)</th>
+                                            <th>{{ account_data.total_units|floatformat:0 }} {{ account_data.unit_label }}</th>
+                                            <th>LKR {{ account_data.total_amount|floatformat:2 }}</th>
+                                            <th class="text-success">+LKR {{ account_data.total_buffer|floatformat:2 }}</th>
+                                            <th><strong class="text-primary">LKR {{ account_data.six_month_total|floatformat:2 }}</strong></th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <!-- No Forecast Yet -->
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-wallet fa-5x text-muted mb-3"></i>
+                    <h4>No forecast generated yet</h4>
+                    <p class="text-muted">Select an account, starting month and year, then click "Generate 6-Month Forecast"</p>
+                    <p class="text-muted"><small>Example: March 2026 will show forecasts for March, April, May, June, July, August</small></p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f0f8ff;
+}
+
+.badge {
+    font-weight: 600;
+}
+</style>
+{% endblock %}

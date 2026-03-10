@@ -1,0 +1,298 @@
+{% extends 'bills/base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-file-invoice"></i> My Bills</h2>
+        <a href="{% url 'add_bill' %}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Add New Bill
+        </a>
+    </div>
+
+    <!-- ========== NEW: Overdue Warning Alert ========== -->
+    {% if overdue_count > 0 %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>⚠️ Warning:</strong> You have {{ overdue_count }} overdue bill{{ overdue_count|pluralize }}!
+        <a href="?status=overdue" class="btn btn-sm btn-danger ms-2">View Overdue Bills</a>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <!-- Active Filter Display -->
+    {% if filter_type %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="fas fa-filter"></i> <strong>Filtered by {{ filter_type }}:</strong> {{ filter_value }}
+        <span class="ms-3 badge bg-primary">{{ total_count }} bills found</span>
+        <span class="ms-2 badge bg-success">Total: LKR {{ total_amount|floatformat:2 }}</span>
+        <a href="{% url 'bill_list' %}" class="btn btn-sm btn-outline-secondary ms-3">
+            <i class="fas fa-times"></i> Clear Filter
+        </a>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <!-- Filter Buttons -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h6 class="mb-3"><i class="fas fa-filter"></i> Quick Filters:</h6>
+            <div class="btn-group mb-2 me-2" role="group">
+                <a href="{% url 'bill_list' %}" class="btn btn-outline-secondary {% if not filter_type %}active{% endif %}">
+                    All Bills
+                </a>
+                <a href="{% url 'bill_list' %}?status=unpaid" class="btn btn-outline-warning {% if status_filter == 'unpaid' %}active{% endif %}">
+                    <i class="fas fa-exclamation-triangle"></i> Unpaid
+                </a>
+                <a href="{% url 'bill_list' %}?status=paid" class="btn btn-outline-success {% if status_filter == 'paid' %}active{% endif %}">
+                    <i class="fas fa-check"></i> Paid
+                </a>
+                <!-- ========== NEW: Overdue Filter Button ========== -->
+                <a href="{% url 'bill_list' %}?status=overdue" class="btn {% if status_filter == 'overdue' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                    🚨 Overdue
+                </a>
+            </div>
+            <div class="btn-group mb-2 me-2" role="group">
+                <a href="{% url 'bill_list' %}?risk=high" class="btn btn-outline-danger {% if risk_filter == 'high' %}active{% endif %}">
+                    <i class="fas fa-exclamation-circle"></i> High Risk
+                </a>
+                <a href="{% url 'bill_list' %}?month=current" class="btn btn-outline-info {% if month_filter == 'current' %}active{% endif %}">
+                    <i class="fas fa-calendar"></i> This Month
+                </a>
+            </div>
+            <div class="btn-group mb-2" role="group">
+                <a href="{% url 'bill_list' %}?utility=electricity" class="btn btn-outline-warning {% if utility_filter == 'electricity' %}active{% endif %}">
+                    <i class="fas fa-bolt"></i> Electricity
+                </a>
+                <a href="{% url 'bill_list' %}?utility=water" class="btn btn-outline-info {% if utility_filter == 'water' %}active{% endif %}">
+                    <i class="fas fa-tint"></i> Water
+                </a>
+                <a href="{% url 'bill_list' %}?utility=mobile" class="btn btn-outline-success {% if utility_filter == 'mobile' %}active{% endif %}">
+                    <i class="fas fa-mobile-alt"></i> Mobile
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bills Table -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-list"></i> 
+                {% if filter_value %}{{ filter_value }}{% else %}All Bills{% endif %}
+                <span class="badge bg-light text-dark ms-2">{{ total_count }}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if bills %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Account</th>
+                            <th>Month/Year</th>
+                            <th>Units</th>
+                            <th>Amount</th>
+                            <th>Due Date</th>
+                            <!-- ========== NEW: Days Overdue Column ========== -->
+                            <th>Days Overdue</th>
+                            <th>Status</th>
+                            <th>Risk</th>
+                            <th>Anomaly</th>
+                            <!-- ✅ NEW: Actions Column ========== -->
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in bills %}
+                        <!-- ========== NEW: Highlight overdue rows ========== -->
+                        <tr class="{% if not bill.is_paid and bill.days_overdue > 0 %}table-danger{% endif %}">
+                            <td>
+                                {% if bill.account %}
+                                    {% if bill.account.utility_type == 'electricity' %}
+                                        <i class="fas fa-bolt text-warning"></i> Electricity
+                                    {% elif bill.account.utility_type == 'water' %}
+                                        <i class="fas fa-tint text-info"></i> Water
+                                    {% else %}
+                                        <i class="fas fa-mobile-alt text-success"></i> Mobile
+                                    {% endif %}
+                                {% else %}
+                                    {% if bill.utility_type == 'electricity' %}
+                                        <i class="fas fa-bolt text-warning"></i> Electricity
+                                    {% elif bill.utility_type == 'water' %}
+                                        <i class="fas fa-tint text-info"></i> Water
+                                    {% else %}
+                                        <i class="fas fa-mobile-alt text-success"></i> Mobile
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if bill.account %}
+                                    {{ bill.account.account_name }}
+                                {% else %}
+                                    {{ bill.account_number }}
+                                {% endif %}
+                            </td>
+                            <td>{{ bill.billing_month }}/{{ bill.billing_year }}</td>
+                            <td>{{ bill.units_consumed|floatformat:1 }}</td>
+                            <td><strong>LKR {{ bill.bill_amount|floatformat:2 }}</strong></td>
+                            <!-- ========== NEW: Show days overdue in Due Date ========== -->
+                            <td>
+                                {{ bill.due_date|date:"M d, Y" }}
+                                {% if not bill.is_paid and bill.days_overdue > 0 %}
+                                    <br><small class="text-danger"><strong>({{ bill.days_overdue }} days overdue)</strong></small>
+                                {% endif %}
+                            </td>
+                            <!-- ========== NEW: Days Overdue Badge ========== -->
+                            <td>
+                                {% if not bill.is_paid and bill.days_overdue > 0 %}
+                                    <span class="badge bg-danger pulse-animation">
+                                        🚨 {{ bill.days_overdue }} day{{ bill.days_overdue|pluralize }}
+                                    </span>
+                                {% elif not bill.is_paid %}
+                                    <span class="badge bg-success">✅ On time</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Paid</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if bill.is_paid %}
+                                    <span class="badge bg-success">Paid</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Unpaid</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if bill.late_payment_risk == 'High Risk' %}
+                                    <span class="badge bg-danger">High Risk</span>
+                                {% elif bill.late_payment_risk == 'Medium Risk' %}
+                                    <span class="badge bg-warning">Medium Risk</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Low Risk</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if bill.is_anomaly %}
+                                    <span class="badge bg-danger">⚠️ Anomaly</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark">Normal</span>
+                                {% endif %}
+                            </td>
+                            <!-- ✅ NEW: Actions Column with Quick Payment Button ========== -->
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <!-- Quick Payment Toggle Button -->
+                                    <form method="POST" action="{% url 'toggle_bill_payment' bill.id %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        {% if bill.is_paid %}
+                                            <button type="submit" 
+                                                    class="btn btn-sm btn-outline-warning" 
+                                                    onclick="return confirm('Mark this bill as UNPAID?');"
+                                                    data-bs-toggle="tooltip" 
+                                                    title="Mark as Unpaid">
+                                                <i class="fas fa-times"></i> Unpaid
+                                            </button>
+                                        {% else %}
+                                            <button type="submit" 
+                                                    class="btn btn-sm btn-success" 
+                                                    onclick="return confirm('Mark this bill as PAID? This will automatically clear high risk status.');"
+                                                    data-bs-toggle="tooltip" 
+                                                    title="Mark as Paid - Auto-clears risk">
+                                                <i class="fas fa-check"></i> Pay
+                                            </button>
+                                        {% endif %}
+                                    </form>
+                                    
+                                    <!-- Edit Button (Admin Only) -->
+                                    {% if user.is_superuser %}
+                                    <a href="{% url 'edit_bill' bill.id %}" 
+                                       class="btn btn-sm btn-outline-primary"
+                                       data-bs-toggle="tooltip" 
+                                       title="Edit Bill">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-info">
+                            <th colspan="4" class="text-end">TOTAL:</th>
+                            <th>LKR {{ total_amount|floatformat:2 }}</th>
+                            <th colspan="6"></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-info-circle"></i> 
+                {% if filter_type %}
+                    No bills found matching "{{ filter_value }}". 
+                    <a href="{% url 'bill_list' %}" class="alert-link">View all bills</a>
+                {% else %}
+                    No bills yet. <a href="{% url 'add_bill' %}" class="alert-link">Add your first bill</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ========== NEW: Overdue Styling ========== -->
+<style>
+/* Highlight overdue bills */
+.table-danger {
+    background-color: #f8d7da !important;
+}
+
+/* Overdue badge pulse animation */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.pulse-animation {
+    animation: pulse 2s infinite;
+}
+
+/* Overdue warning alert */
+.alert-danger {
+    border-left: 5px solid #dc3545;
+}
+
+/* ✅ NEW: Quick Actions Button Styling */
+.btn-group .btn {
+    transition: all 0.2s ease;
+    min-width: 70px;
+}
+
+.btn-group .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* Highlight unpaid rows with light yellow background */
+tr:has(.badge.bg-warning.text-dark) {
+    background-color: #fff3cd30;
+}
+
+/* Highlight paid rows with light green tint */
+tr:has(.badge.bg-success:contains("Paid")) {
+    background-color: #d4edda20;
+}
+</style>
+
+<!-- ✅ NEW: Initialize Tooltips -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

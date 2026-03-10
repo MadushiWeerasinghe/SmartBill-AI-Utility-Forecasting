@@ -1,0 +1,192 @@
+{% extends 'bills/base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2 class="mb-4"><i class="fas fa-home"></i> Dashboard</h2>
+    
+    <!-- Statistics Cards - NOW CLICKABLE! -->
+    <div class="row mb-4">
+        <!-- Total Bills Card - Click to see all bills -->
+        <div class="col-md-3">
+            <a href="{% url 'bill_list' %}" class="text-decoration-none">
+                <div class="card bg-primary text-white h-100 hover-shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Bills</h5>
+                        <h2 class="display-4">{{ total_bills }}</h2>
+                        <i class="fas fa-file-invoice fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <!-- Unpaid Bills Card - Click to see unpaid bills -->
+        <div class="col-md-3">
+            <a href="{% url 'bill_list' %}?status=unpaid" class="text-decoration-none">
+                <div class="card bg-warning text-white h-100 hover-shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">Unpaid</h5>
+                        <h2 class="display-4">{{ unpaid_bills }}</h2>
+                        <i class="fas fa-exclamation-triangle fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <!-- High Risk Card - Click to see high risk bills -->
+        <div class="col-md-3">
+            <a href="{% url 'bill_list' %}?risk=high" class="text-decoration-none">
+                <div class="card bg-danger text-white h-100 hover-shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">High Risk</h5>
+                        <h2 class="display-4">{{ high_risk_bills }}</h2>
+                        <i class="fas fa-exclamation-circle fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <!-- This Month Card - Click to see this month's bills -->
+        <div class="col-md-3">
+            <a href="{% url 'bill_list' %}?month=current" class="text-decoration-none">
+                <div class="card bg-success text-white h-100 hover-shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">This Month</h5>
+                        <h2 class="display-4">LKR {{ monthly_total|floatformat:2 }}</h2>
+                        <i class="fas fa-calendar fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Bills by Type -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <i class="fas fa-bolt fa-3x text-warning mb-2"></i>
+                    <h5>Electricity Bills</h5>
+                    <h3 class="text-warning">{{ electricity_count }}</h3>
+                    <a href="{% url 'bill_list' %}?utility=electricity" class="btn btn-sm btn-warning">
+                        View All
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <i class="fas fa-tint fa-3x text-info mb-2"></i>
+                    <h5>Water Bills</h5>
+                    <h3 class="text-info">{{ water_count }}</h3>
+                    <a href="{% url 'bill_list' %}?utility=water" class="btn btn-sm btn-info">
+                        View All
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <i class="fas fa-mobile-alt fa-3x text-success mb-2"></i>
+                    <h5>Mobile Bills</h5>
+                    <h3 class="text-success">{{ mobile_count }}</h3>
+                    <a href="{% url 'bill_list' %}?utility=mobile" class="btn btn-sm btn-success">
+                        View All
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Bills -->
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="fas fa-history"></i> Recent Bills</h5>
+        </div>
+        <div class="card-body">
+            {% if recent_bills %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Account</th>
+                            <th>Month/Year</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Risk</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in recent_bills %}
+                        <tr>
+                            <td>
+                                {% if bill.get_utility_type == 'electricity' %}
+                                    <i class="fas fa-bolt text-warning"></i> Electricity
+                                {% elif bill.get_utility_type == 'water' %}
+                                    <i class="fas fa-tint text-info"></i> Water
+                                {% else %}
+                                    <i class="fas fa-mobile-alt text-success"></i> Mobile
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if bill.account %}
+                                    {{ bill.account.account_name }}
+                                {% else %}
+                                    {{ bill.get_account_number }}
+                                {% endif %}
+                            </td>
+                            <td>{{ bill.billing_month }}/{{ bill.billing_year }}</td>
+                            <td>LKR {{ bill.bill_amount|floatformat:2 }}</td>
+                            <td>
+                                {% if bill.is_paid %}
+                                    <span class="badge bg-success">Paid</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Unpaid</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if bill.late_payment_risk == 'High Risk' %}
+                                    <span class="badge bg-danger">High Risk</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Low Risk</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-center mt-3">
+                <a href="{% url 'bill_list' %}" class="btn btn-primary">
+                    <i class="fas fa-list"></i> View All Bills
+                </a>
+            </div>
+            {% else %}
+            <p class="text-muted text-center">No bills yet. <a href="{% url 'add_bill' %}">Add your first bill</a></p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-shadow {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.opacity-50 {
+    opacity: 0.5;
+}
+
+a.text-decoration-none:hover {
+    text-decoration: none;
+}
+</style>
+{% endblock %}

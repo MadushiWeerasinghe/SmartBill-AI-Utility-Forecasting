@@ -1,0 +1,192 @@
+{% extends 'bills/base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2 class="mb-4"><i class="fas fa-chart-line"></i> Predict Future Bills</h2>
+
+    <div class="row">
+        <!-- Prediction Input Form -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Prediction Input</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="predictForm">
+                        {% csrf_token %}
+                        
+                        <!-- Utility Type -->
+                        <div class="mb-3">
+                            <label class="form-label">Utility Type</label>
+                            <select name="utility_type" id="utilityType" class="form-control" required>
+                                <option value="">-- Select Utility Type --</option>
+                                <option value="electricity" {% if request.POST.utility_type == 'electricity' %}selected{% endif %}>⚡ Electricity</option>
+                                <option value="water" {% if request.POST.utility_type == 'water' %}selected{% endif %}>💧 Water</option>
+                                <option value="mobile" {% if request.POST.utility_type == 'mobile' %}selected{% endif %}>📱 Mobile</option>
+                            </select>
+                        </div>
+
+                        <!-- Account Selection (Dynamic) -->
+                        <div class="mb-3" id="accountField" style="display: none;">
+                            <label class="form-label">Select Account</label>
+                            <select name="account_id" id="accountSelect" class="form-control" required>
+                                <option value="">-- Select Account --</option>
+                            </select>
+                            <small class="text-muted">System will predict based on this account's history</small>
+                        </div>
+
+                        <!-- Month & Year -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Month</label>
+                                <select name="month" class="form-control" required>
+                                    {% for m in months %}
+                                    <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>
+                                        {{ m }} - {% if m == 1 %}January{% elif m == 2 %}February{% elif m == 3 %}March{% elif m == 4 %}April{% elif m == 5 %}May{% elif m == 6 %}June{% elif m == 7 %}July{% elif m == 8 %}August{% elif m == 9 %}September{% elif m == 10 %}October{% elif m == 11 %}November{% else %}December{% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Year</label>
+                                <select name="year" class="form-control" required>
+                                    {% for y in years %}
+                                    <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Predict Button -->
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-magic"></i> Predict Bill
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle"></i> <strong>How it works:</strong><br>
+                The AI analyzes historical data from the selected account and predicts the future bill amount automatically. No manual input needed!
+            </div>
+        </div>
+
+        <!-- Prediction Results -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Prediction Results</h5>
+                </div>
+                <div class="card-body">
+                    {% if prediction %}
+                    <div class="text-center mb-4">
+                        <i class="fas fa-chart-line fa-4x text-success mb-3"></i>
+                        <h3>{{ prediction.utility }} Bill Prediction</h3>
+                        <p class="text-muted">{{ prediction.account_name }} ({{ prediction.account_number }})</p>
+                    </div>
+
+                    <div class="row text-center mb-4">
+                        <div class="col-md-6 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Average Units (Last 6 months)</h6>
+                                    <h2 class="text-primary">{{ prediction.avg_units|floatformat:1 }}</h2>
+                                    <small>{% if prediction.utility == 'Electricity' %}kWh{% elif prediction.utility == 'Water' %}m³{% else %}Minutes{% endif %}</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Predicted Units</h6>
+                                    <h2 class="text-info">{{ prediction.predicted_units|floatformat:1 }}</h2>
+                                    <small>{% if prediction.utility == 'Electricity' %}kWh{% elif prediction.utility == 'Water' %}m³{% else %}Minutes{% endif %}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-success text-white mb-3">
+                        <div class="card-body text-center">
+                            <h6>Predicted Bill Amount</h6>
+                            <h1 class="display-4">LKR {{ prediction.predicted_bill|floatformat:2 }}</h1>
+                        </div>
+                    </div>
+
+                    <div class="card bg-warning text-dark mb-3">
+                        <div class="card-body text-center">
+                            <h6>Recommended Budget</h6>
+                            <h3>LKR {{ prediction.recommended_budget|floatformat:2 }}</h3>
+                            <small>Includes 10% safety buffer (LKR {{ prediction.safety_buffer|floatformat:2 }})</small>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> <strong>AI Accuracy:</strong> {{ prediction.accuracy }}
+                    </div>
+
+                    <!-- Download PDF Button -->
+                    <form method="post" action="{% url 'download_prediction_pdf' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="prediction_data" value="{{ prediction_json }}">
+                        <button type="submit" class="btn btn-danger btn-lg w-100">
+                            <i class="fas fa-file-pdf"></i> Download PDF Report
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-line fa-5x text-muted mb-3"></i>
+                        <h4>No prediction yet</h4>
+                        <p class="text-muted">Fill the form and click "Predict Bill" to see AI predictions</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Account data from Django
+const accountsData = {
+    electricity: {{ electricity_accounts_json|safe }},
+    water: {{ water_accounts_json|safe }},
+    mobile: {{ mobile_accounts_json|safe }}
+};
+
+const utilityTypeSelect = document.getElementById('utilityType');
+const accountField = document.getElementById('accountField');
+const accountSelect = document.getElementById('accountSelect');
+
+// Show/hide account dropdown based on utility type
+utilityTypeSelect.addEventListener('change', function() {
+    const utilityType = this.value;
+    
+    if (utilityType && accountsData[utilityType]) {
+        // Clear and populate account dropdown
+        accountSelect.innerHTML = '<option value="">-- Select Account --</option>';
+        
+        accountsData[utilityType].forEach(account => {
+            const option = document.createElement('option');
+            option.value = account.id;
+            option.textContent = `${account.name} (${account.number})`;
+            accountSelect.appendChild(option);
+        });
+        
+        accountField.style.display = 'block';
+        accountSelect.required = true;
+    } else {
+        accountField.style.display = 'none';
+        accountSelect.required = false;
+    }
+});
+
+// Trigger on page load if utility type is already selected
+window.addEventListener('load', function() {
+    if (utilityTypeSelect.value) {
+        utilityTypeSelect.dispatchEvent(new Event('change'));
+    }
+});
+</script>
+{% endblock %}

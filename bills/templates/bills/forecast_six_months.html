@@ -1,0 +1,143 @@
+{% extends 'bills/base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-chart-line"></i> 6-Month Bill Forecast</h2>
+        <div>
+            <span class="badge bg-info fs-6">{{ forecast_period }}</span>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5><i class="fas fa-calculator"></i> Total Predicted Units</h5>
+                    <h2>{{ grand_total_units|floatformat:2 }}</h2>
+                    <p class="mb-0">Next 6 months across all accounts</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5><i class="fas fa-money-bill-wave"></i> Total Predicted Amount</h5>
+                    <h2>LKR {{ grand_total_amount|floatformat:2 }}</h2>
+                    <p class="mb-0">Next 6 months across all accounts</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account-wise Forecasts -->
+    {% for forecast in forecast_data %}
+    <div class="card mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">
+                {% if forecast.account.utility_type == 'electricity' %}
+                    <i class="fas fa-bolt text-warning"></i>
+                {% elif forecast.account.utility_type == 'water' %}
+                    <i class="fas fa-tint text-info"></i>
+                {% else %}
+                    <i class="fas fa-mobile-alt text-success"></i>
+                {% endif %}
+                {{ forecast.account.account_name }}
+                <span class="badge bg-secondary ms-2">{{ forecast.account.account_number }}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <!-- Account Summary -->
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <div class="alert alert-info mb-0">
+                        <strong>Total Units (6 months)</strong>
+                        <h4>{{ forecast.total_units|floatformat:2 }}</h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="alert alert-success mb-0">
+                        <strong>Total Amount (6 months)</strong>
+                        <h4>LKR {{ forecast.total_amount|floatformat:2 }}</h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="alert alert-warning mb-0">
+                        <strong>Avg Units/Month</strong>
+                        <h4>{{ forecast.avg_monthly_units|floatformat:2 }}</h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="alert alert-primary mb-0">
+                        <strong>Avg Amount/Month</strong>
+                        <h4>LKR {{ forecast.avg_monthly_amount|floatformat:2 }}</h4>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monthly Breakdown -->
+            <h6 class="mb-3"><i class="fas fa-calendar-alt"></i> Monthly Breakdown</h6>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Month</th>
+                            <th class="text-end">Predicted Units</th>
+                            <th class="text-end">Predicted Amount</th>
+                            <th class="text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for month_forecast in forecast.monthly_forecasts %}
+                        <tr>
+                            <td><strong>{{ month_forecast.month_name }}</strong></td>
+                            <td class="text-end">{{ month_forecast.predicted_units|floatformat:2 }}</td>
+                            <td class="text-end"><strong>LKR {{ month_forecast.predicted_amount|floatformat:2 }}</strong></td>
+                            <td class="text-center">
+                                <span class="badge bg-info">Forecasted</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-secondary">
+                        <tr>
+                            <th>TOTAL (6 Months)</th>
+                            <th class="text-end">{{ forecast.total_units|floatformat:2 }}</th>
+                            <th class="text-end">LKR {{ forecast.total_amount|floatformat:2 }}</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i> 
+        No accounts found or insufficient historical data for forecasting.
+        <a href="{% url 'add_account' %}" class="alert-link">Add an account</a> to get started.
+    </div>
+    {% endfor %}
+
+    <!-- Action Buttons -->
+    <div class="card">
+        <div class="card-body text-center">
+            <a href="{% url 'dashboard' %}" class="btn btn-primary">
+                <i class="fas fa-home"></i> Back to Dashboard
+            </a>
+            <button onclick="window.print()" class="btn btn-secondary">
+                <i class="fas fa-print"></i> Print Forecast
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn, nav, .navbar {
+        display: none !important;
+    }
+}
+</style>
+{% endblock %}

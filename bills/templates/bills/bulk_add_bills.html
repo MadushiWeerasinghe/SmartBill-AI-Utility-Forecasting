@@ -1,0 +1,81 @@
+{% extends 'bills/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h4><i class="fas fa-upload"></i> Bulk Import Historical Bills</h4>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Import up to 12 months of historical billing data at once.
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label class="form-label">Select Account *</label>
+                    <select name="account" class="form-select" required>
+                        <option value="">Choose account...</option>
+                        {% for acc in accounts %}
+                            <option value="{{ acc.id }}">
+                                {{ acc.get_utility_type_display }} - {{ acc.account_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <h5 class="mb-3">Enter Bill Data (Start from oldest month)</h5>
+
+                {% for i in "123456789012" %}
+                <div class="card mb-3">
+                    <div class="card-header">Month {{ forloop.counter }}</div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label class="form-label">Month</label>
+                                <select name="month_{{ forloop.counter }}" class="form-select">
+                                    <option value="">-</option>
+                                    {% for month in months %}
+                                        <option value="{{ month }}">{{ month }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Year</label>
+                                <select name="year_{{ forloop.counter }}" class="form-select">
+                                    <option value="">-</option>
+                                    {% for year in years %}
+                                        <option value="{{ year }}">{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Units</label>
+                                <input type="number" name="units_{{ forloop.counter }}" 
+                                       class="form-control" step="0.01" placeholder="0">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Amount (LKR)</label>
+                                <input type="number" name="amount_{{ forloop.counter }}" 
+                                       class="form-control" step="0.01" placeholder="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-info btn-lg">
+                        <i class="fas fa-upload"></i> Import Bills
+                    </button>
+                    <a href="{% url 'accounts_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

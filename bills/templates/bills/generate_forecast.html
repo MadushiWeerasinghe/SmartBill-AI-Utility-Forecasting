@@ -1,0 +1,70 @@
+{% extends 'bills/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="fas fa-calendar-alt"></i> Generate Budget Forecast</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Forecast Period *</label>
+                            <select name="forecast_type" class="form-select" required>
+                                <option value="6_months">6 Months</option>
+                                <option value="1_year">1 Year</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Forecast For</label>
+                            <select name="account" class="form-select">
+                                <option value="">All Accounts (Overall)</option>
+                                <optgroup label="Electricity">
+                                    {% for acc in accounts %}
+                                        {% if acc.utility_type == 'electricity' %}
+                                            <option value="{{ acc.id }}">{{ acc.account_name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </optgroup>
+                                <optgroup label="Water">
+                                    {% for acc in accounts %}
+                                        {% if acc.utility_type == 'water' %}
+                                            <option value="{{ acc.id }}">{{ acc.account_name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </optgroup>
+                                <optgroup label="Mobile">
+                                    {% for acc in accounts %}
+                                        {% if acc.utility_type == 'mobile' %}
+                                            <option value="{{ acc.id }}">{{ acc.account_name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </optgroup>
+                            </select>
+                            <small class="text-muted">Leave blank to forecast across all accounts</small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> The forecast uses AI models trained on historical data from selected accounts.
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-chart-line"></i> Generate Forecast
+                            </button>
+                            <a href="{% url 'accounts_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

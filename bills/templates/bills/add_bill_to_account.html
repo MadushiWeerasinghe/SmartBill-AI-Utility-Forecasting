@@ -1,0 +1,89 @@
+{% extends 'bills/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="fas fa-file-invoice-dollar"></i> Add Bill to Account</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Select Account *</label>
+                            <select name="account" class="form-select" required>
+                                <option value="">Choose account...</option>
+                                {% for acc in accounts %}
+                                    <option value="{{ acc.id }}">
+                                        {{ acc.get_utility_type_display }} - {{ acc.account_name }} ({{ acc.account_number }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Billing Month *</label>
+                                <select name="billing_month" class="form-select" required>
+                                    <option value="">Select month...</option>
+                                    {% for month in months %}
+                                        <option value="{{ month }}" {% if month == current_month %}selected{% endif %}>
+                                            {{ month }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Billing Year *</label>
+                                <select name="billing_year" class="form-select" required>
+                                    {% for year in years %}
+                                        <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>
+                                            {{ year }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Units Consumed</label>
+                            <input type="number" name="units_consumed" class="form-control" 
+                                   step="0.01" value="0" placeholder="kWh or Cubic Meters">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Bill Amount (LKR) *</label>
+                            <input type="number" name="bill_amount" class="form-control" 
+                                   step="0.01" required placeholder="e.g., 4500.00">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Due Date *</label>
+                            <input type="date" name="due_date" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" name="is_paid" class="form-check-input" id="isPaid">
+                            <label class="form-check-label" for="isPaid">
+                                Mark as paid
+                            </label>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Add Bill
+                            </button>
+                            <a href="{% url 'accounts_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

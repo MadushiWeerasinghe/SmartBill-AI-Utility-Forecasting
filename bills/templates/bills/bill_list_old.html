@@ -1,0 +1,87 @@
+{% extends 'bills/base.html' %}
+
+{% block title %}My Bills - SmartBill{% endblock %}
+
+{% block content %}
+<h2 class="text-white mb-4"><i class="fas fa-file-invoice"></i> My Bills</h2>
+
+<div class="card">
+    <div class="card-body">
+        <div class="d-flex justify-content-between mb-3">
+            <div class="btn-group">
+                <a href="{% url 'bill_list' %}" class="btn btn-sm {% if not utility_filter %}btn-primary{% else %}btn-outline-primary{% endif %}">All</a>
+                <a href="?utility=electricity" class="btn btn-sm {% if utility_filter == 'electricity' %}btn-primary{% else %}btn-outline-primary{% endif %}">⚡ Electricity</a>
+                <a href="?utility=water" class="btn btn-sm {% if utility_filter == 'water' %}btn-primary{% else %}btn-outline-primary{% endif %}">💧 Water</a>
+                <a href="?utility=mobile" class="btn btn-sm {% if utility_filter == 'mobile' %}btn-primary{% else %}btn-outline-primary{% endif %}">📱 Mobile</a>
+            </div>
+            <a href="{% url 'add_bill' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Bill
+            </a>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Utility</th>
+                        <th>Account</th>
+                        <th>Period</th>
+                        <th>Units</th>
+                        <th>Amount</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>AI Flags</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bill in bills %}
+                    <tr>
+                        <td>{{ bill.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            {% if bill.utility_type == 'electricity' %}
+                                <span class="badge bg-warning">⚡ Electricity</span>
+                            {% elif bill.utility_type == 'water' %}
+                                <span class="badge bg-info">💧 Water</span>
+                            {% else %}
+                                <span class="badge bg-success">📱 Mobile</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ bill.account_number }}</td>
+                        <td>{{ bill.billing_month }}/{{ bill.billing_year }}</td>
+                        <td>{{ bill.units_consumed|floatformat:1 }}</td>
+                        <td><strong>LKR {{ bill.bill_amount|floatformat:2 }}</strong></td>
+                        <td>{{ bill.due_date }}</td>
+                        <td>
+                            {% if bill.is_paid %}
+                                <span class="badge bg-success">✓ Paid</span>
+                            {% else %}
+                                <span class="badge bg-warning">⏳ Unpaid</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if bill.is_anomaly %}
+                                <span class="badge bg-danger" title="Unusual bill amount detected">⚠️ Anomaly</span>
+                            {% endif %}
+                            {% if bill.late_payment_risk == 'High Risk' %}
+                                <span class="badge bg-danger" title="High risk of late payment">🚨 Risk</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No bills found. Add your first bill!</p>
+                            <a href="{% url 'add_bill' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Add Bill
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

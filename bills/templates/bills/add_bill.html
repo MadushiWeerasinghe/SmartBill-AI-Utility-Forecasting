@@ -1,0 +1,236 @@
+{% extends 'bills/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4"><i class="fas fa-plus-circle"></i> Add New Bill</h2>
+    
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label class="form-label">Utility Type *</label>
+                    <select name="utility_type" id="utilityType" class="form-control" required>
+                        <option value="">-- Select Utility Type --</option>
+                        <option value="electricity" {% if request.POST.utility_type == 'electricity' %}selected{% endif %}>⚡ Electricity (CEB)</option>
+                        <option value="water" {% if request.POST.utility_type == 'water' %}selected{% endif %}>💧 Water</option>
+                        <option value="mobile" {% if request.POST.utility_type == 'mobile' %}selected{% endif %}>📱 Mobile</option>
+                    </select>
+                </div>
+
+                <div class="mb-3" id="accountDropdownDiv" style="display: none;">
+                    <label class="form-label">Select Account *</label>
+                    <select name="account_id" id="accountDropdown" class="form-control">
+                        <option value="">-- Select Account --</option>
+                    </select>
+                    <small class="text-muted">Choose from your existing accounts (e.g., Branch 1, Head Office, etc.)</small>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Billing Month *</label>
+                        <select name="billing_month" class="form-control" required>
+                            {% for month in months %}
+                            <option value="{{ month }}" {% if month == current_month %}selected{% endif %}>
+                                {{ month }} - {% if month == 1 %}January{% elif month == 2 %}February{% elif month == 3 %}March{% elif month == 4 %}April{% elif month == 5 %}May{% elif month == 6 %}June{% elif month == 7 %}July{% elif month == 8 %}August{% elif month == 9 %}September{% elif month == 10 %}October{% elif month == 11 %}November{% else %}December{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Billing Year *</label>
+                        <select name="billing_year" class="form-control" required>
+                            {% for year in years %}
+                            <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Units Consumed</label>
+                    <input type="number" step="0.01" name="units_consumed" class="form-control" value="0">
+                    <small class="text-muted">kWh for electricity, m³ for water (optional for mobile)</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Bill Amount (LKR) *</label>
+                    <input type="number" step="0.01" name="bill_amount" class="form-control" required placeholder="e.g., 5000.00">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Due Date *</label>
+                    <input type="date" name="due_date" class="form-control" required>
+                </div>
+
+                <!-- ✅ NEW: EMAIL NOTIFICATION FIELD (OPTIONAL) -->
+                <div class="mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-envelope text-primary"></i> Email Notification (Optional)
+                        <i class="fas fa-info-circle text-muted ms-1" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="top"
+                           title="Get automatic payment reminders: 7 days before, 3 days before, on due date, and if overdue"></i>
+                    </label>
+                    <input 
+                        type="email" 
+                        name="notification_email" 
+                        class="form-control" 
+                        placeholder="manager@hotel.com (optional)"
+                        id="notificationEmail"
+                    >
+                    <small class="form-text text-muted">
+                        <i class="fas fa-bell"></i> <strong>Email Reminders:</strong> 
+                        Receive automatic alerts 7 days, 3 days, and on due date. Leave blank to skip notifications.
+                    </small>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" name="is_paid" class="form-check-input" id="isPaid">
+                    <label class="form-check-label" for="isPaid">Mark as Paid</label>
+                </div>
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="fas fa-save"></i> Save Bill
+                    </button>
+                    <a href="{% url 'bill_list' %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="alert alert-info mt-4">
+        <i class="fas fa-info-circle"></i> <strong>Note:</strong> 
+        If you don't see your account in the dropdown, please go to <a href="{% url 'manage_accounts' %}">Manage Accounts</a> to add it first.
+    </div>
+
+    <!-- ✅ NEW: Email Notification Info Card -->
+    <div class="card mt-3 border-primary">
+        <div class="card-header bg-primary text-white">
+            <i class="fas fa-envelope"></i> Email Notification Schedule
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="text-center p-2">
+                        <i class="fas fa-calendar-alt fa-2x text-info mb-2"></i>
+                        <h6>7 Days Before</h6>
+                        <small class="text-muted">Early reminder</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center p-2">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                        <h6>3 Days Before</h6>
+                        <small class="text-muted">Urgent reminder</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center p-2">
+                        <i class="fas fa-bell fa-2x text-danger mb-2"></i>
+                        <h6>Due Date</h6>
+                        <small class="text-muted">Payment due today</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center p-2">
+                        <i class="fas fa-ban fa-2x text-dark mb-2"></i>
+                        <h6>Overdue</h6>
+                        <small class="text-muted">Daily alerts</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// All accounts data from Django
+const accountsData = {
+    electricity: {{ electricity_accounts_json|safe }},
+    water: {{ water_accounts_json|safe }},
+    mobile: {{ mobile_accounts_json|safe }}
+};
+
+// When utility type changes, update account dropdown
+document.getElementById('utilityType').addEventListener('change', function() {
+    const utilityType = this.value;
+    const accountDropdown = document.getElementById('accountDropdown');
+    const accountDropdownDiv = document.getElementById('accountDropdownDiv');
+    
+    // Clear existing options
+    accountDropdown.innerHTML = '<option value="">-- Select Account --</option>';
+    
+    if (utilityType && accountsData[utilityType]) {
+        // Show dropdown
+        accountDropdownDiv.style.display = 'block';
+        
+        // Populate with accounts
+        accountsData[utilityType].forEach(account => {
+            const option = document.createElement('option');
+            option.value = account.id;
+            option.textContent = `${account.name} (${account.number})`;
+            accountDropdown.appendChild(option);
+        });
+        
+        // Make it required
+        accountDropdown.required = true;
+    } else {
+        // Hide dropdown
+        accountDropdownDiv.style.display = 'none';
+        accountDropdown.required = false;
+    }
+});
+
+// Trigger change on page load if utility type is already selected
+window.addEventListener('load', function() {
+    const utilityType = document.getElementById('utilityType').value;
+    if (utilityType) {
+        document.getElementById('utilityType').dispatchEvent(new Event('change'));
+    }
+    
+    // ✅ Initialize Bootstrap tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+// ✅ Optional: Validate email format
+document.getElementById('notificationEmail').addEventListener('blur', function() {
+    const email = this.value.trim();
+    if (email && !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        this.classList.add('is-invalid');
+        if (!this.nextElementSibling || !this.nextElementSibling.classList.contains('invalid-feedback')) {
+            const feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback';
+            feedback.textContent = 'Please enter a valid email address';
+            this.parentNode.insertBefore(feedback, this.nextElementSibling);
+        }
+    } else {
+        this.classList.remove('is-invalid');
+        const feedback = this.parentNode.querySelector('.invalid-feedback');
+        if (feedback) feedback.remove();
+    }
+});
+</script>
+
+<style>
+/* ✅ Email field highlight animation */
+#notificationEmail:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Email notification card hover effect */
+.card.border-primary:hover {
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.2);
+    transition: box-shadow 0.3s ease;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'bills/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card border-success">
+        <div class="card-header bg-success text-white">
+            <h4><i class="fas fa-chart-bar"></i> Budget Forecast Results</h4>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card border-primary">
+                        <div class="card-body text-center">
+                            <h3 class="text-primary">LKR {{ total_forecast }}</h3>
+                            <p class="mb-0">Total Forecast</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-info">
+                        <div class="card-body text-center">
+                            <h3 class="text-info">LKR {{ avg_monthly }}</h3>
+                            <p class="mb-0">Average per Month</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="mb-3">Monthly Breakdown:</h5>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Year</th>
+                            <th>Predicted Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for forecast in forecasts %}
+                        <tr>
+                            <td>{{ forecast.month }}</td>
+                            <td>{{ forecast.year }}</td>
+                            <td>LKR {{ forecast.amount|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-success">
+                            <th colspan="2">TOTAL</th>
+                            <th>LKR {{ total_forecast }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <a href="{% url 'generate_forecast' %}" class="btn btn-primary">
+                    <i class="fas fa-redo"></i> Generate Another Forecast
+                </a>
+                <a href="{% url 'accounts_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Accounts
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

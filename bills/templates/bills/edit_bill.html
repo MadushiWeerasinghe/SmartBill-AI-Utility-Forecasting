@@ -1,0 +1,66 @@
+{% extends 'bills/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-edit"></i> Edit Bill</h2>
+        <a href="{% url 'bill_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Bills
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Account (Read-only)</label>
+                        <input type="text" class="form-control" 
+                               value="{{ bill.account.account_name }} ({{ bill.account.account_number }})" disabled>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Billing Period (Read-only)</label>
+                        <input type="text" class="form-control" 
+                               value="{{ bill.billing_month }}/{{ bill.billing_year }}" disabled>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Units Consumed</label>
+                    <input type="number" step="0.01" name="units_consumed" class="form-control" 
+                           value="{{ bill.units_consumed }}" placeholder="e.g., 1200">
+                    <small class="text-muted">kWh for electricity, m³ for water</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Bill Amount (LKR) *</label>
+                    <input type="number" step="0.01" name="bill_amount" class="form-control" 
+                           value="{{ bill.bill_amount }}" required placeholder="e.g., 15000.00">
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" name="is_paid" class="form-check-input" id="isPaid" 
+                           {% if bill.is_paid %}checked{% endif %}>
+                    <label class="form-check-label" for="isPaid">Mark as Paid</label>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save"></i> Update Bill
+                    </button>
+                    <a href="{% url 'bill_list' %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert-warning mt-4">
+        <i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> 
+        You can only edit units, amount, and payment status. Account and billing period cannot be changed.
+    </div>
+</div>
+{% endblock %}

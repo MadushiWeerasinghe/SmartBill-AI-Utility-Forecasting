@@ -1,0 +1,156 @@
+{% extends 'bills/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-edit"></i> Edit Account</h2>
+        <a href="{% url 'account_detail' account.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label class="form-label">Utility Type (Read-only)</label>
+                    <input type="text" class="form-control" 
+                           value="{% if account.utility_type == 'electricity' %}⚡ Electricity{% elif account.utility_type == 'water' %}💧 Water{% else %}📱 Mobile{% endif %}" 
+                           disabled>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" id="accountNumberLabel">Account Number *</label>
+                    <input type="text" name="account_number" id="accountNumber" class="form-control" 
+                           value="{{ account.account_number }}" required>
+                    <small class="text-muted" id="accountNumberHint">
+                        {% if account.utility_type == 'mobile' %}
+                        Sri Lankan mobile number (10 digits, starts with 07)
+                        {% elif account.utility_type == 'electricity' %}
+                        CEB account number (6-15 digits)
+                        {% else %}
+                        Water account number (4-20 characters)
+                        {% endif %}
+                    </small>
+                    <div class="invalid-feedback" id="accountNumberError"></div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Account Name *</label>
+                    <input type="text" name="account_name" class="form-control" 
+                           value="{{ account.account_name }}" required placeholder="e.g., Head Office, Branch 1">
+                    <small class="text-muted">Give it a descriptive name</small>
+                </div>
+                
+                {% if account.utility_type == 'mobile' %}
+                <div class="mb-3">
+                    <label class="form-label">Mobile Provider</label>
+                    <select name="provider" class="form-control">
+                        <option value="">-- Select Provider --</option>
+                        <option value="Dialog" {% if account.provider == 'Dialog' %}selected{% endif %}>Dialog</option>
+                        <option value="Mobitel" {% if account.provider == 'Mobitel' %}selected{% endif %}>Mobitel</option>
+                        <option value="Hutch" {% if account.provider == 'Hutch' %}selected{% endif %}>Hutch</option>
+                        <option value="Airtel" {% if account.provider == 'Airtel' %}selected{% endif %}>Airtel</option>
+                    </select>
+                </div>
+                {% endif %}
+                
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                        <i class="fas fa-save"></i> Update Account
+                    </button>
+                    <a href="{% url 'account_detail' account.id %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert-warning mt-4">
+        <i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> 
+        Changing the account number may affect existing bills linked to this account. Make sure the new number is correct!
+    </div>
+</div>
+
+<script>
+// Validation patterns (same as add_account)
+const validationRules = {
+    mobile: {
+        pattern: /^07[0-9]{8}$/,
+        errorMessage: 'Mobile number must be exactly 10 digits and start with 07 (e.g., 0771234567)'
+    },
+    electricity: {
+        pattern: /^[0-9]{6,15}$/,
+        errorMessage: 'CEB account number must be 6-15 digits (e.g., 123456789)'
+    },
+    water: {
+        pattern: /^[0-9A-Za-z\-]{4,20}$/,
+        errorMessage: 'Water account number must be 4-20 characters (e.g., WTR-001)'
+    }
+};
+
+const accountNumber = document.getElementById('accountNumber');
+const accountNumberError = document.getElementById('accountNumberError');
+const form = document.querySelector('form');
+const utilityType = '{{ account.utility_type }}';
+
+// Real-time validation
+accountNumber.addEventListener('input', function() {
+    const value = this.value.trim();
+    const rules = validationRules[utilityType];
+    
+    if (!rules) return;
+    
+    if (!rules.pattern.test(value)) {
+        this.classList.remove('is-valid');
+        this.classList.add('is-invalid');
+        accountNumberError.textContent = rules.errorMessage;
+    } else {
+        this.classList.remove('is-invalid');
+        this.classList.add('is-valid');
+        accountNumberError.textContent = '';
+    }
+});
+
+// Validate on submit
+form.addEventListener('submit', function(e) {
+    const value = accountNumber.value.trim();
+    const rules = validationRules[utilityType];
+    
+    if (rules && !rules.pattern.test(value)) {
+        alert(rules.errorMessage);
+        accountNumber.classList.add('is-invalid');
+        accountNumberError.textContent = rules.errorMessage;
+        e.preventDefault();
+        return;
+    }
+    
+    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+    document.getElementById('submitBtn').disabled = true;
+});
+</script>
+
+<style>
+.is-valid {
+    border-color: #28a745 !important;
+}
+
+.is-invalid {
+    border-color: #dc3545 !important;
+}
+
+.invalid-feedback {
+    display: block;
+    color: #dc3545;
+    font-size: 0.875em;
+    margin-top: 0.25rem;
+}
+
+.is-valid ~ .invalid-feedback {
+    display: none;
+}
+</style>
+{% endblock %}

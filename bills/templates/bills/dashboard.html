@@ -1,0 +1,360 @@
+{% extends 'bills/base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2 class="mb-4"><i class="fas fa-home"></i> Dashboard</h2>
+    
+    <!-- Statistics Cards - CLICKABLE -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <a href="{% url 'bill_list' %}" class="text-decoration-none">
+                <div class="card bg-primary text-white h-100 hover-shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Bills</h5>
+                        <h2 class="display-4">{{ total_bills }}</h2>
+                        <i class="fas fa-file-invoice fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="col-md-3">
+            <a href="{% url 'bill_list' %}?status=unpaid" class="text-decoration-none">
+                <div class="card bg-warning text-white h-100 hover-shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">Unpaid</h5>
+                        <h2 class="display-4">{{ unpaid_bills }}</h2>
+                        <i class="fas fa-exclamation-triangle fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="col-md-3">
+            <a href="{% url 'bill_list' %}?risk=high" class="text-decoration-none">
+                <div class="card bg-danger text-white h-100 hover-shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">High Risk</h5>
+                        <h2 class="display-4">{{ high_risk_bills }}</h2>
+                        <i class="fas fa-exclamation-circle fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="col-md-3">
+            <a href="{% url 'bill_list' %}?month=current" class="text-decoration-none">
+                <div class="card bg-success text-white h-100 hover-shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">This Month</h5>
+                        <h2 class="display-4">LKR {{ monthly_total|floatformat:2 }}</h2>
+                        <i class="fas fa-calendar fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- 6-Month Analysis Charts with Account Filters -->
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="fas fa-chart-line"></i> Last 6 Months Analysis</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- Electricity Chart -->
+                <div class="col-md-4 mb-3">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="fas fa-bolt"></i> Electricity</h6>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Account Filter Dropdown -->
+                            <div class="mb-3">
+                                <label class="form-label small"><strong>Select Account:</strong></label>
+                                <select id="electricityAccountFilter" class="form-select form-select-sm" onchange="updateElectricityChart()">
+                                    <option value="all">All Accounts (Total)</option>
+                                    {% for account in electricity_accounts %}
+                                    <option value="{{ account.id }}">{{ account.account_name }} ({{ account.account_number }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <canvas id="electricityChart" height="250"></canvas>
+                            <div class="text-center mt-2">
+                                <small class="text-muted">Total: <strong id="electricityTotal">{{ electricity_count }} bills</strong></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Water Chart -->
+                <div class="col-md-4 mb-3">
+                    <div class="card border-info">
+                        <div class="card-header bg-info text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="fas fa-tint"></i> Water</h6>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Account Filter Dropdown -->
+                            <div class="mb-3">
+                                <label class="form-label small"><strong>Select Account:</strong></label>
+                                <select id="waterAccountFilter" class="form-select form-select-sm" onchange="updateWaterChart()">
+                                    <option value="all">All Accounts (Total)</option>
+                                    {% for account in water_accounts %}
+                                    <option value="{{ account.id }}">{{ account.account_name }} ({{ account.account_number }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <canvas id="waterChart" height="250"></canvas>
+                            <div class="text-center mt-2">
+                                <small class="text-muted">Total: <strong id="waterTotal">{{ water_count }} bills</strong></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mobile Chart -->
+                <div class="col-md-4 mb-3">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="fas fa-mobile-alt"></i> Mobile</h6>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Account Filter Dropdown -->
+                            <div class="mb-3">
+                                <label class="form-label small"><strong>Select Account:</strong></label>
+                                <select id="mobileAccountFilter" class="form-select form-select-sm" onchange="updateMobileChart()">
+                                    <option value="all">All Accounts (Total)</option>
+                                    {% for account in mobile_accounts %}
+                                    <option value="{{ account.id }}">{{ account.account_name }} ({{ account.account_number }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <canvas id="mobileChart" height="250"></canvas>
+                            <div class="text-center mt-2">
+                                <small class="text-muted">Total: <strong id="mobileTotal">{{ mobile_count }} bills</strong></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View All Bills Button -->
+            <div class="text-center mt-3">
+                <a href="{% url 'bill_list' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-list"></i> View All Bills
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+<script>
+// All accounts data (passed from Django)
+const allAccountsData = {{ all_accounts_data|safe }};
+
+// Current chart instances
+let electricityChartInstance = null;
+let waterChartInstance = null;
+let mobileChartInstance = null;
+
+// Chart configuration
+const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: { display: false },
+        tooltip: {
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            titleFont: { size: 14, weight: 'bold' },
+            bodyFont: { size: 13 },
+            padding: 12,
+            callbacks: {
+                label: function(context) {
+                    return 'Amount: LKR ' + context.parsed.y.toLocaleString();
+                }
+            }
+        }
+    },
+    scales: {
+        y: {
+            beginAtZero: true,
+            ticks: {
+                callback: function(value) {
+                    return 'LKR ' + value.toLocaleString();
+                }
+            },
+            grid: { color: 'rgba(0,0,0,0.1)' }
+        },
+        x: { grid: { display: false } }
+    }
+};
+
+// Initialize charts with ALL accounts data
+function initializeCharts() {
+    // Electricity Chart
+    const electricityCtx = document.getElementById('electricityChart').getContext('2d');
+    electricityChartInstance = new Chart(electricityCtx, {
+        type: 'line',
+        data: {
+            labels: {{ electricity_months|safe }},
+            datasets: [{
+                label: 'Electricity',
+                data: {{ electricity_amounts|safe }},
+                borderColor: '#ffc107',
+                backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: '#ffc107',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: chartOptions
+    });
+
+    // Water Chart
+    const waterCtx = document.getElementById('waterChart').getContext('2d');
+    waterChartInstance = new Chart(waterCtx, {
+        type: 'line',
+        data: {
+            labels: {{ water_months|safe }},
+            datasets: [{
+                label: 'Water',
+                data: {{ water_amounts|safe }},
+                borderColor: '#17a2b8',
+                backgroundColor: 'rgba(23, 162, 184, 0.2)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: '#17a2b8',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: chartOptions
+    });
+
+    // Mobile Chart
+    const mobileCtx = document.getElementById('mobileChart').getContext('2d');
+    mobileChartInstance = new Chart(mobileCtx, {
+        type: 'line',
+        data: {
+            labels: {{ mobile_months|safe }},
+            datasets: [{
+                label: 'Mobile',
+                data: {{ mobile_amounts|safe }},
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: '#28a745',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: chartOptions
+    });
+}
+
+// Update Electricity Chart when account is selected
+function updateElectricityChart() {
+    const accountId = document.getElementById('electricityAccountFilter').value;
+    
+    if (accountId === 'all') {
+        // Show all accounts combined
+        electricityChartInstance.data.datasets[0].data = {{ electricity_amounts|safe }};
+        document.getElementById('electricityTotal').textContent = '{{ electricity_count }} bills';
+    } else {
+        // Show specific account
+        const accountData = allAccountsData.electricity[accountId];
+        if (accountData) {
+            electricityChartInstance.data.datasets[0].data = accountData.amounts;
+            document.getElementById('electricityTotal').textContent = accountData.count + ' bills';
+        }
+    }
+    electricityChartInstance.update();
+}
+
+// Update Water Chart
+function updateWaterChart() {
+    const accountId = document.getElementById('waterAccountFilter').value;
+    
+    if (accountId === 'all') {
+        waterChartInstance.data.datasets[0].data = {{ water_amounts|safe }};
+        document.getElementById('waterTotal').textContent = '{{ water_count }} bills';
+    } else {
+        const accountData = allAccountsData.water[accountId];
+        if (accountData) {
+            waterChartInstance.data.datasets[0].data = accountData.amounts;
+            document.getElementById('waterTotal').textContent = accountData.count + ' bills';
+        }
+    }
+    waterChartInstance.update();
+}
+
+// Update Mobile Chart
+function updateMobileChart() {
+    const accountId = document.getElementById('mobileAccountFilter').value;
+    
+    if (accountId === 'all') {
+        mobileChartInstance.data.datasets[0].data = {{ mobile_amounts|safe }};
+        document.getElementById('mobileTotal').textContent = '{{ mobile_count }} bills';
+    } else {
+        const accountData = allAccountsData.mobile[accountId];
+        if (accountData) {
+            mobileChartInstance.data.datasets[0].data = accountData.amounts;
+            document.getElementById('mobileTotal').textContent = accountData.count + ' bills';
+        }
+    }
+    mobileChartInstance.update();
+}
+
+// Initialize charts on page load
+initializeCharts();
+</script>
+
+<style>
+.hover-shadow {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.opacity-50 {
+    opacity: 0.5;
+}
+
+a.text-decoration-none:hover {
+    text-decoration: none;
+}
+
+canvas {
+    max-height: 250px;
+}
+
+.card-header h6 {
+    font-weight: 600;
+}
+</style>
+{% endblock %}
