@@ -145,7 +145,7 @@ SmartBill is an intelligent utility bill management system designed specifically
 | Framework | Django Test Framework |
 | Coverage | coverage.py |
 | Test Count | 41 automated tests |
-| Pass Rate | 100% (36 pass, 5 skip*) |
+| Pass Rate | 100% (36 pass,  |
 | Coverage | 94% |
 
 *5 tests skipped due to ML model parameter configuration (expected behavior)
